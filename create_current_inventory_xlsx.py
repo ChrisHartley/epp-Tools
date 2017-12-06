@@ -7,6 +7,7 @@ from requests import Request, Session
 import xlsxwriter
 from os.path import getmtime
 import datetime
+from ePropertyPlus_api import ePPHelper
 
 # Store your secret API key in a separate file 'api_key.py' and import the
 # variable here. Or you can just put the key here, if you aren't going to
@@ -20,15 +21,7 @@ API_ENDPOINT = 'https://indysbx.epropertyplus.com/landmgmt/api/'
 
 # Edit the query as necessary
 api_resource = 'property/summary'
-
 json_query = '{"criterias":[{"name":"active","value":"Yes","operator":"EQUALS"},{"name":"published","value":"Yes","operator":"EQUALS"}]}'
-
-parameters = {
-    'page': 1,
-    'limit': 50000,
-    'json': json_query,
-    }
-
 
 FILENAME = '/tmp/Inventory-Export.xlsx'
 REFRESH_SECONDS = 3
@@ -52,16 +45,9 @@ if tdelta.total_seconds() > REFRESH_SECONDS: # 5 minutes
     workbook = xlsxwriter.Workbook(FILENAME)
     worksheet = workbook.add_worksheet('Available Inventory')
 
-    url = '{0}{1}'.format(API_ENDPOINT, api_resource,)
-    s = Session()
-    headers = {
-        'Content-Type': 'application/json',
-        'x-strllc-authkey':  API_KEY,
-        'Accept': 'application/json',
-    }
-    s.headers.update(headers)
-    r = s.get(url, params=parameters)
-    json_obj = r.json()
+    epp = ePPHelper(API_KEY, API_ENDPOINT)
+    json_obj = epp.query(api_resource, json_query)
+
     if json_obj['success'] == True:
 
         # Write column names across the first row.
@@ -74,9 +60,7 @@ if tdelta.total_seconds() > REFRESH_SECONDS: # 5 minutes
                 worksheet.write(row, indx, record[field[1]])
     else:
         print "Endpoint returned success = false"
-        print r.url
-        print r.headers
-        print r.text
+        print json_obj
     workbook.close()
 else:
     print 'File cached, not re-fetching.'
