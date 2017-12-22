@@ -33,7 +33,6 @@ class ePPHelper(object):
             pp = pprint.PrettyPrinter(indent=4)
             pp.pprint( 'Request Headers: {0}'.format(r.request.headers,))
             pp.pprint( 'Request Body: {0}'.format(r.request.body,))
-            #print(r.request.body)
             pp.pprint( 'Request URL: {0}'.format(r.url,))
             pp.pprint( 'Request Headers: {0}'.format(r.headers,))
             pp.pprint( r.json())
@@ -41,6 +40,8 @@ class ePPHelper(object):
 
         if r.status_code <= 399:
             return r.json()
+        # For 400+ errors we make our own JSON response, especially with
+        # 500 errors which return text.
         if r.status_code >= 400:
             if r.text == '':
                 return {'success': False, 'server_response_code': r.status_code}
@@ -91,12 +92,3 @@ class ePPHelper(object):
 
         r = self.session.post(URL, params=parameters)
         return self.parse_results(r)
-
-x = ePPHelper(sandbox=False, debug=False)
-#print(x.get_property_summary('960550'))
-#z = x.get_reference_list('Property Status')
-#print(z)
-query = '{"criterias":[{"name":"id","value":"960550","operator":"EQUALS"}]}'
-z = x.get_published_properties()
-
-#print (z)
