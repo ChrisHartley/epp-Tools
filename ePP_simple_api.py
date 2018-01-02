@@ -67,6 +67,14 @@ class ePPHelper(object):
         r = self.session.get(URL)
         return self.parse_results(r)
 
+    def get_image_list(self, property_id):
+        api_resource = 'image/list/'
+        URL = '{0}{1}?ownerId={2}&ownerType=PROPERTY'.format(self.endpoint, api_resource, property_id)
+        r = self.session.get(URL)
+        return self.parse_results(r)
+
+
+
     def get_property_search(self, json_query, sort=''):
         api_resource = 'property/summary'
         #json_query =  {"criterias":[{"name":"active","value":"Yes","operator":"EQUALS"}]}
