@@ -1,7 +1,7 @@
 from requests import Request, Session
 from urllib.parse import quote
 import json
-
+from json.decoder import JSONDecodeError
 class ePPHelper(object):
     def __init__(self, sandbox=True, debug=False):
         try:
@@ -22,6 +22,7 @@ class ePPHelper(object):
             'Accept': 'application/json',
         }
         self.debug = debug
+        self.site_url = 'https://indy.epropertyplus.com'
         self.endpoint = API_ENDPOINT
         s = Session()
         s.headers.update(headers)
@@ -35,11 +36,14 @@ class ePPHelper(object):
             pp.pprint( 'Request Body: {0}'.format(r.request.body,))
             pp.pprint( 'Request URL: {0}'.format(r.url,))
             pp.pprint( 'Request Headers: {0}'.format(r.headers,))
-            pp.pprint( r.json())
+            #pp.pprint( r.json())
             #pp.pprint( r.text)
 
         if r.status_code <= 399:
-            return r.json()
+            try:
+                return r.json()
+            except ValueError:
+                return r.content
         # For 400+ errors we make our own JSON response, especially with
         # 500 errors which return text.
         if r.status_code >= 400:
@@ -73,6 +77,11 @@ class ePPHelper(object):
         r = self.session.get(URL)
         return self.parse_results(r)
 
+    def get_image(self, image_id):
+        api_resource = 'image/view/'
+        URL = '{0}{1}/{2}'.format(self.endpoint, api_resource, image_id)
+        r = self.session.get(URL)
+        return self.parse_results(r)
 
 
     def get_property_search(self, json_query, sort=''):

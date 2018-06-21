@@ -4,7 +4,7 @@ import datetime
 import argparse
 
 master_query = """
-SELECT
+SELECT distinct
 parcel_c as "Parcel Number",
 r.property_status as "Property Status",
 r.property_class as "Property Class",
@@ -84,7 +84,7 @@ initcap(cdc.name) as "Custom.CDC",
 
 FROM dmd_property_load r
 LEFT JOIN parcels p on p.parcel_c = r.parcel
-LEFT JOIN counter_book_2017_updated c on c."Parcel_Number" = p.parcel_c
+LEFT JOIN counter_book_2018 c on c."Parcel_Number" = p.parcel_c
 LEFT JOIN census_tract_marion_county_income ci on st_within(p.geom, ci.geometry)
 LEFT JOIN neighborhoods n on st_within(p.geom, n.geom)
 LEFT JOIN mva_areas m ON st_within(p.geom, m.geom)
@@ -101,6 +101,8 @@ args = parser.parse_args()
 header = ['Parcel Number', 'Property Status', 'Property Class', 'Owner Party Number', 'Owner Party External System Id', 'Property Address.Address1', 'Property Address.Address2', 'Property Address.City', 'Property Address.County', 'Property Address.State', 'Property Address.Postal Code', 'Status Date', 'Property Manager Party Number', 'Property Manager Party External System Id', 'Update', 'Available', 'Foreclosure Year', 'Inventory Type', 'Legal Description', 'Listing Comments', 'Maintenance Manager Party External System Id', 'Maintenance Manager Party Number', 'Parcel Square Footage', 'Parcel Length', 'Parcel Width', 'Published', 'Tags', 'Latitude', 'Longitude', 'Parcel Boundary', 'Census Tract', 'Congressional District', 'Legislative District', 'Local District', 'Neighborhood', 'School District', 'Voting Precinct', 'Zoned As', 'Acquisition Amount', 'Acquisition Date', 'Acquisition Method', 'Sold Amount', 'Sold Date', 'Actual Disposition', 'Asking Price', 'Assessment Year', 'Current Assessment', 'Minimum Bid Amount', 'Block Condition', 'Brush Removal', 'Cleanup Assessment', 'Demolition Needed', 'Environmental Cleanup Needed', 'Market Condition', 'Potential Use', 'Property Condition', 'Property of Interest', 'Quiet Title', 'Rehab Candidate', 'Target Disposition', 'Trash Removal ', 'Custom.BEP Mortgage Expiration Date', 'Custom.BLC Number', 'Custom.CDC', 'Custom.Grant Program', 'Custom.Sales Program'
 ]
 
+header_text_fields = []
+
 conn_string_gis = "host='localhost' dbname='epp' user='chris' password='chris'"
 conn_gis = psycopg2.connect(conn_string_gis)
 cursor = conn_gis.cursor()
@@ -111,6 +113,7 @@ cursor.execute(master_query)
 
 workbook = xlsxwriter.Workbook('property-import-{0}.xlsx'.format(datetime.date.today(),))
 worksheet = workbook.add_worksheet('PropertyDescription')
+text_format = workbook.add_format({'num_format': '@'})
 
 for i in range(len(header)):
     worksheet.write(0, i, header[i])
@@ -118,6 +121,14 @@ for i in range(len(header)):
 for index,prop in enumerate(cursor.fetchall(), 1):
     print(prop)
     for i in range(len(prop)):
-        worksheet.write(index, i, prop[i])
+        #print(prop[i])
+        #print(header[i])
+        #print(header_text_fields.index(header[i]))
+        try:
+            if header_text_fields.index(header[i]):
+                print("Text Field! {0}".format(header[i]))
+                worksheet.write(index, i, prop[i], text_format) # write parcel numbers as text
+        except ValueError:
+            worksheet.write(index, i, prop[i])
 
 workbook.close()
